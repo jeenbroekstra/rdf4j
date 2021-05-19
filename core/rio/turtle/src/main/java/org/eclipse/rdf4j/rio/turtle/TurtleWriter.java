@@ -7,12 +7,14 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.rio.turtle;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.eclipse.rdf4j.common.io.CharSink;
 import org.eclipse.rdf4j.common.io.IndentingWriter;
 import org.eclipse.rdf4j.common.net.ParsedIRI;
 import org.eclipse.rdf4j.common.text.StringUtil;
@@ -45,6 +48,7 @@ import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
 import org.eclipse.rdf4j.rio.RDFWriter;
+import org.eclipse.rdf4j.rio.RioSetting;
 import org.eclipse.rdf4j.rio.helpers.AbstractRDFWriter;
 import org.eclipse.rdf4j.rio.helpers.BasicParserSettings;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
@@ -53,7 +57,7 @@ import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
  * An implementation of the RDFWriter interface that writes RDF documents in Turtle format. The Turtle format is defined
  * in <a href="http://www.dajobe.org/2004/01/turtle/">in this document</a>.
  */
-public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
+public class TurtleWriter extends AbstractRDFWriter implements RDFWriter, CharSink {
 
 	private static final int LINE_WRAP = 80;
 
@@ -66,10 +70,6 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 	private static final IRI REST = new SimpleIRI(RDF.REST.stringValue()) {
 		private static final long serialVersionUID = -7951518099940758898L;
 	};
-
-	/*-----------*
-	 * Variables *
-	 *-----------*/
 
 	/**
 	 * Size of statement buffer used for pretty printing and blank node inlining. Set to Long.MAX_VALUE to buffer
@@ -98,10 +98,6 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 
 	private ModelFactory modelFactory = new LinkedHashModelFactory();
 
-	/*--------------*
-	 * Constructors *
-	 *--------------*/
-
 	/**
 	 * Creates a new TurtleWriter that will write to the supplied OutputStream.
 	 *
@@ -118,9 +114,10 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 	 * @param baseIRI
 	 */
 	public TurtleWriter(OutputStream out, ParsedIRI baseIRI) {
-		super(out);
 		this.baseIRI = baseIRI;
-		this.writer = new IndentingWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
+		// The BufferedWriter is here to avoid to many calls to the CharEncoder
+		// see javadoc of OutputStreamWriter.
+		this.writer = new IndentingWriter(new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
 	}
 
 	/**
@@ -143,13 +140,24 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 		this.writer = new IndentingWriter(writer);
 	}
 
-	/*---------*
-	 * Methods *
-	 *---------*/
+	@Override
+	public Writer getWriter() {
+		return writer;
+	}
 
 	@Override
 	public RDFFormat getRDFFormat() {
 		return RDFFormat.TURTLE;
+	}
+
+	@Override
+	public Collection<RioSetting<?>> getSupportedSettings() {
+		final Collection<RioSetting<?>> settings = new HashSet<>(super.getSupportedSettings());
+		settings.add(BasicWriterSettings.BASE_DIRECTIVE);
+		settings.add(BasicWriterSettings.XSD_STRING_TO_PLAIN_LITERAL);
+		settings.add(BasicWriterSettings.PRETTY_PRINT);
+		settings.add(BasicWriterSettings.INLINE_BLANK_NODES);
+		return settings;
 	}
 
 	@Override
@@ -837,19 +845,25 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 	}
 
 	private Optional<Resource> nextSubject(Model contextData, Set<Resource> processedSubjects) {
+		// first try finding a subject that has not yet been processed and is not the object of another
+		// unprocessed subject
 		for (Resource subject : contextData.subjects()) {
 			if (processedSubjects.contains(subject)) {
 				continue;
 			}
-			if (subject instanceof BNode && inlineBNodes) {
+			if (subject.isBNode() && inlineBNodes) {
 				Set<Resource> otherSubjects = contextData.filter(null, null, subject).subjects();
 				if (otherSubjects.stream().anyMatch(s -> !processedSubjects.contains(s))) {
+					// Other unprocessed subject using this subject as an object is present. Skip this one for now.
 					continue;
 				}
 			}
 			return Optional.of(subject);
 		}
-		return Optional.empty();
+
+		// Ensure we did not inadvertently miss any subjects. This can happen when there is a cyclic relation between
+		// blank nodes.
+		return contextData.subjects().stream().filter(subject -> !processedSubjects.contains(subject)).findAny();
 	}
 
 	private void processSubject(Model contextData, Resource subject, Set<Resource> processedSubjects) {
@@ -861,6 +875,9 @@ public class TurtleWriter extends AbstractRDFWriter implements RDFWriter {
 
 		// give rdf:type preference over other predicates.
 		processPredicate(contextData, subject, RDF.TYPE, processedSubjects, processedPredicates);
+
+		// handle RDF Collection statements separately, to make sure we process them in the correct order
+		processPredicate(contextData, subject, RDF.FIRST, processedSubjects, processedPredicates);
 
 		// retrieve other statement from this context with the same
 		// subject, and output them grouped by predicate

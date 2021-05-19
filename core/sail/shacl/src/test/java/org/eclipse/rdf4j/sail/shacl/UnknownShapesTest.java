@@ -21,6 +21,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +58,11 @@ public class UnknownShapesTest {
 
 		assertEquals(expected, relevantLog);
 
+		shaclRepository.shutDown();
+
 	}
 
+	@Ignore
 	@Test
 	public void testComplexPath() throws IOException, InterruptedException {
 		ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
@@ -89,6 +93,8 @@ public class UnknownShapesTest {
 				"Unsupported SHACL feature with complex path. Only single predicate paths, or single predicate inverse paths are supported. <http://example.com/ns#inverseOfWithComplex> shape has been deactivated!  @prefix sh: <http://www.w3.org/ns/shacl#> .  <http://example.com/ns#inverseOfWithComplex> sh:path [       sh:inversePath [           sh:zeroOrMorePath <http://example.com/ns#inverseThis>         ]     ] ."));
 
 		assertEquals(expected, relevantLog);
+
+		shaclRepository.shutDown();
 	}
 
 	class MyAppender extends AppenderBase<ILoggingEvent> {

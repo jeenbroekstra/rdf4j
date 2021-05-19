@@ -149,7 +149,7 @@ public class SchemaCachingRDFSInferencerConnection extends InferencerConnectionW
 
 	void doInferencing()
 			throws SailException {
-		if (sail.schema == null && schemaChange) {
+		if (!sail.usesPredefinedSchema() && schemaChange) {
 			regenerateCacheAndInferenceMaps(true);
 			inferredCleared = true;
 		}
@@ -220,7 +220,7 @@ public class SchemaCachingRDFSInferencerConnection extends InferencerConnectionW
 		}
 
 		sail.acquireExclusiveWriteLock();
-		if (sail.schema == null) {
+		if (!sail.usesPredefinedSchema()) {
 			processForSchemaCache(sail.getValueFactory().createStatement(subject, predicate, object));
 		}
 
@@ -754,8 +754,10 @@ public class SchemaCachingRDFSInferencerConnection extends InferencerConnectionW
 
 		super.rollback();
 
-		sail.clearInferenceTables();
-		regenerateCacheAndInferenceMaps(false);
+		if (statementsAdded || statementsRemoved || schemaChange) {
+			sail.clearInferenceTables();
+			regenerateCacheAndInferenceMaps(false);
+		}
 
 		statementsRemoved = false;
 		statementsAdded = false;

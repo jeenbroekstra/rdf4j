@@ -63,8 +63,6 @@ public class TempTest {
 
 			connection.commit();
 
-			System.out.println("\n\n\n\n\n\n\n\n\n\n");
-
 			connection.begin();
 
 			connection.remove(RDFS.RESOURCE, RDFS.LABEL, connection.getValueFactory().createLiteral("a"));
@@ -75,6 +73,8 @@ public class TempTest {
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
 
 	}
@@ -94,8 +94,6 @@ public class TempTest {
 //
 			connection.commit();
 
-			System.out.println("\n\n\n\n\n\n\n\n\n\n");
-
 			connection.begin();
 
 			connection.remove(RDFS.RESOURCE, RDFS.LABEL, connection.getValueFactory().createLiteral("a"));
@@ -104,8 +102,9 @@ public class TempTest {
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test(expected = RepositoryException.class)
@@ -123,8 +122,6 @@ public class TempTest {
 
 			connection.commit();
 
-			System.out.println("\n\n\n\n\n\n\n\n\n\n");
-
 			connection.begin();
 
 			connection.add(RDFS.RESOURCE, RDF.TYPE, RDFS.RESOURCE);
@@ -138,8 +135,9 @@ public class TempTest {
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test
@@ -157,16 +155,15 @@ public class TempTest {
 
 			connection.commit();
 
-			System.out.println("\n\n\n\n\n\n\n\n\n\n");
-
 			connection.begin();
 
 			connection.add(RDFS.RESOURCE, RDF.TYPE, RDFS.RESOURCE);
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test
@@ -201,10 +198,12 @@ public class TempTest {
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
+	@Ignore
 	@Test(expected = RepositoryException.class)
 	public void testShapeWithoutTargetClassRemove() throws Exception {
 
@@ -221,10 +220,12 @@ public class TempTest {
 			connection.remove(RDFS.CLASS, RDFS.LABEL, connection.getValueFactory().createLiteral("class1"));
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
+	@Ignore
 	@Test(expected = RepositoryException.class)
 	public void testShapeWithoutTargetClassAdd() throws Exception {
 
@@ -241,8 +242,9 @@ public class TempTest {
 			connection.add(RDFS.RESOURCE, RDF.TYPE, RDFS.RESOURCE);
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test
@@ -270,10 +272,13 @@ public class TempTest {
 			connection.add(RDFS.RESOURCE, RDFS.LABEL, connection.getValueFactory().createLiteral("class1"));
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
 
 	}
 
+	@Ignore
 	@Test(expected = ShaclSailValidationException.class)
 	public void testUndefinedTargetClassValidatesAllSubjects() throws Throwable {
 
@@ -324,10 +329,13 @@ public class TempTest {
 				}
 				throw e;
 			}
+		} finally {
+			shaclRepository.shutDown();
 		}
 
 	}
 
+	@Ignore
 	@Test(expected = ShaclSailValidationException.class)
 	public void testUndefinedTargetClassValidatesAllSubjects2() throws Throwable {
 
@@ -375,8 +383,9 @@ public class TempTest {
 				}
 				throw e;
 			}
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test
@@ -423,8 +432,9 @@ public class TempTest {
 
 			connection.commit();
 
+		} finally {
+			shaclRepository.shutDown();
 		}
-
 	}
 
 	@Test
@@ -488,6 +498,8 @@ public class TempTest {
 
 			));
 
+		} finally {
+			sailRepository.shutDown();
 		}
 	}
 

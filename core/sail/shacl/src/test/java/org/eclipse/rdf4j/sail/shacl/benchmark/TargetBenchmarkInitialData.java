@@ -48,7 +48,7 @@ import ch.qos.logback.classic.Logger;
 @State(Scope.Benchmark)
 @Warmup(iterations = 20)
 @BenchmarkMode({ Mode.AverageTime })
-//@Fork(value = 1, jvmArgs = {"-Xms8G", "-Xmx8G", "-XX:+UseG1GC", "-XX:+UnlockCommercialFeatures", "-XX:StartFlightRecording=delay=5s,duration=60s,filename=recording.jfr,settings=profile", "-XX:FlightRecorderOptions=samplethreads=true,stackdepth=1024", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"})
+//@Fork(value = 1, jvmArgs = {"-Xms8G", "-Xmx8G", "-XX:+UseG1GC", "-XX:StartFlightRecording=delay=5s,duration=60s,filename=recording.jfr,settings=profile", "-XX:FlightRecorderOptions=samplethreads=true,stackdepth=1024", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"})
 @Fork(value = 1, jvmArgs = { "-Xms8G", "-Xmx8G", "-XX:+UseG1GC" })
 @Measurement(iterations = 10)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -60,8 +60,7 @@ public class TargetBenchmarkInitialData {
 	@Param({ "1", "1000", "100000" })
 	public int existingTargets = 10;
 
-	@Param({ "shaclDatatypePredicateObjectTarget.ttl", "shaclDatatypeSparqlTarget.ttl",
-			"shaclDatatypeTargetFilter.ttl" })
+	@Param({ "shaclDatatypeSparqlTarget.ttl", "shaclDatatypeTargetFilter.ttl" })
 	public String shape;
 
 	public int NUMBER_OF_TRANSACTIONS = 10;
